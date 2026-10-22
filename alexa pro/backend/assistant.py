@@ -174,7 +174,7 @@ class Assistant:
 
     # ── AI model call ─────────────────────────────────────────────
 
-    async def _ai_reply(self, message: str, history: list[dict]) -> str:
+       async def _ai_reply(self, message: str, history: list[dict]) -> str:
         """Send the message + history to the Anthropic API and return the reply."""
         from datetime import datetime
         now = datetime.now().strftime("%A, %B %d %Y at %I:%M %p")
