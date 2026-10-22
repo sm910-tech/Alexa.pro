@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alexa Pro — Personal Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Main Layout ── -->
+  <div id="app">
+
+    <!-- ── Sidebar ── -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-mark"></div>
+          <span>Alexa Pro</span>
+        </div>
+        <button id="sidebar-toggle" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="home" aria-label="Home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>Home</span>
+        </button>
+        <button class="nav-item" data-view="dashboard" aria-label="Dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="history" aria-label="History">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>History</span>
+        </button>
+        <button class="nav-item" data-view="reminders" aria-label="Reminders">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 01-3.46 0"/>
+          </svg>
+          <span>Reminders</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar footer -->
+      <div class="sidebar-footer">
+        <button class="nav-item" data-view="settings" aria-label="Settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+        <div class="backend-status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Connecting…</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ── Main Content ── -->
+    <main id="main">
+
+      <!-- ═══════════ HOME VIEW ═══════════ -->
+      <section id="view-home" class="view active">
+        <div class="home-top">
+          <div class="home-meta">
+            <div id="home-time" class="home-time">--:--</div>
+            <div id="home-date" class="home-date">Loading…</div>
+            <div id="home-greeting" class="home-greeting">Hello</div>
+          </div>
+        </div>
+
+        <!-- Orb -->
+        <div class="orb-container">
+          <canvas id="orb-canvas" width="320" height="320" aria-label="Assistant orb"></canvas>
+          <div class="orb-status-label" id="orb-status-label">Tap to speak</div>
+        </div>
+
+        <!-- Transcript -->
+        <div class="transcript-area" id="transcript-area" aria-live="polite">
+          <div class="transcript-user" id="transcript-user" hidden></div>
+          <div class="transcript-assistant" id="transcript-assistant" hidden></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="home-controls">
+          <button id="btn-mic" class="ctrl-btn primary" aria-label="Start listening">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+              <path d="M19 10v2a7 7 0 01-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+          <button id="btn-keyboard" class="ctrl-btn secondary" aria-label="Type a message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <line x1="6" y1="9" x2="6" y2="9"/><line x1="10" y1="9" x2="10" y2="9"/>
+              <line x1="14" y1="9" x2="14" y2="9"/><line x1="18" y1="9" x2="18" y2="9"/>
+              <line x1="6" y1="13" x2="6" y2="13"/><line x1="10" y1="13" x2="10" y2="13"/>
+              <line x1="14" y1="13" x2="14" y2="13"/><line x1="18" y1="13" x2="18" y2="13"/>
+              <line x1="8" y1="17" x2="16" y2="17"/>
+            </svg>
+          </button>
+          <button id="btn-mute" class="ctrl-btn" aria-label="Mute" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="1" y1="1" x2="23" y2="23"/>
+              <path d="M9 9v3a3 3 0 005.12 2.12M15 9.34V4a3 3 0 00-5.94-.6"/>
+              <path d="M17 16.95A7 7 0 015 12v-2m14 0v2a7 7 0 01-.11 1.23"/>
+              <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Text input (hidden until keyboard mode) -->
+        <div class="text-input-area" id="text-input-area" hidden>
+          <div class="text-input-row">
+            <input type="text" id="text-input" placeholder="Ask anything…" autocomplete="off" />
+            <button id="btn-send" aria-label="Send">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+            </button>
+            <button id="btn-close-keyboard" aria-label="Close keyboard">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ DASHBOARD VIEW ═══════════ -->
+      <section id="view-dashboard" class="view">
+        <header class="view-header">
+          <h1>Dashboard</h1>
+          <div id="dash-time" class="dash-time">--:--</div>
+        </header>
+
+        <div class="dashboard-grid">
+
+          <!-- Weather card -->
+          <div class="dash-card weather-card">
+            <div class="card-label">Weather</div>
+            <div class="weather-main">
+              <div class="weather-icon" id="weather-icon">⛅</div>
+              <div class="weather-temp" id="weather-temp">--°</div>
+            </div>
+            <div class="weather-desc" id="weather-desc">Loading…</div>
+            <div class="weather-meta" id="weather-meta"></div>
+          </div>
+
+          <!-- Date / time card -->
+          <div class="dash-card time-card">
+            <div class="card-label">Date & Time</div>
+            <div class="time-display" id="time-display">--:--:--</div>
+            <div class="date-display" id="date-display">---</div>
+          </div>
+
+          <!-- Reminders card -->
+          <div class="dash-card reminders-card">
+            <div class="card-header-row">
+              <div class="card-label">Reminders</div>
+              <button class="card-action-btn" id="dash-add-reminder">+ Add</button>
+            </div>
+            <ul class="reminder-list" id="dash-reminder-list">
+              <li class="reminder-empty">No reminders yet</li>
+            </ul>
+          </div>
+
+          <!-- Timers card -->
+          <div class="dash-card timers-card">
+            <div class="card-header-row">
+              <div class="card-label">Timers</div>
+              <button class="card-action-btn" id="dash-add-timer">+ New</button>
+            </div>
+            <div class="timer-list" id="timer-list">
+              <div class="timer-empty">No active timers</div>
+            </div>
+          </div>
+
+          <!-- Quick actions card -->
+          <div class="dash-card quick-card">
+            <div class="card-label">Quick Ask</div>
+            <div class="quick-grid">
+              <button class="quick-btn" data-query="What time is it?">🕐 Time</button>
+              <button class="quick-btn" data-query="What's the weather like today?">🌤 Weather</button>
+              <button class="quick-btn" data-query="Set a 5 minute timer">⏱ 5 min timer</button>
+              <button class="quick-btn" data-query="What's 15% of 240?">🧮 Calculate</button>
+              <button class="quick-btn" data-query="List my reminders">📋 Reminders</button>
+              <button class="quick-btn" data-query="Tell me a fun fact">✨ Fun fact</button>
+            </div>
+          </div>
+
+          <!-- Smart home card -->
+          <div class="dash-card smarthome-card">
+            <div class="card-label">Smart Home</div>
+            <div class="smarthome-grid">
+              <button class="sh-btn" data-device="Living Room Light" data-state="on">
+                <span class="sh-icon">💡</span>
+                <span class="sh-name">Living Room</span>
+                <span class="sh-state">On</span>
+              </button>
+              <button class="sh-btn off" data-device="Bedroom Light" data-state="off">
+                <span class="sh-icon">💡</span>
+                <span class="sh-name">Bedroom</span>
+                <span class="sh-state">Off</span>
+              </button>
+              <button class="sh-btn off" data-device="Fan" data-state="off">
+                <span class="sh-icon">🌀</span>
+                <span class="sh-name">Fan</span>
+                <span class="sh-state">Off</span>
+              </button>
+              <button class="sh-btn" data-device="TV" data-state="on">
+                <span class="sh-icon">📺</span>
+                <span class="sh-name">TV</span>
+                <span class="sh-state">On</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ═══════════ HISTORY VIEW ═══════════ -->
+      <section id="view-history" class="view">
+        <header class="view-header">
+          <h1>Conversation History</h1>
+          <button class="header-btn" id="btn-clear-history">Clear all</button>
+        </header>
+        <div class="history-list" id="history-list">
+          <div class="history-empty">No conversations yet. Start talking!</div>
+        </div>
+      </section>
+
+      <!-- ═══════════ REMINDERS VIEW ═══════════ -->
+      <section id="view-reminders" class="view">
+        <header class="view-header">
+          <h1>Reminders</h1>
+          <button class="header-btn" id="btn-add-reminder">+ Add reminder</button>
+        </header>
+
+        <div class="reminder-form" id="reminder-form" hidden>
+          <input type="text" id="reminder-text-input" placeholder="Reminder text…" />
+          <input type="datetime-local" id="reminder-time-input" />
+          <div class="form-actions">
+            <button id="btn-save-reminder" class="btn-primary">Save</button>
+            <button id="btn-cancel-reminder" class="btn-ghost">Cancel</button>
+          </div>
+        </div>
+
+        <div class="reminders-full-list" id="reminders-full-list">
+          <div class="reminder-empty">No reminders yet. Add your first one.</div>
+        </div>
+      </section>
+
+      <!-- ═══════════ SETTINGS VIEW ═══════════ -->
+      <section id="view-settings" class="view">
+        <header class="view-header">
+          <h1>Settings</h1>
+        </header>
+        <div class="settings-sections">
+
+          <div class="settings-group">
+            <div class="settings-group-label">Voice</div>
+            <div class="setting-row">
+              <label for="setting-tts">Text-to-speech</label>
+              <select id="setting-tts"><option value="">Default</option></select>
+            </div>
+            <div class="setting-row">
+              <label for="setting-rate">Speaking rate</label>
+              <input type="range" id="setting-rate" min="0.5" max="2" step="0.1" value="1" />
+              <span id="setting-rate-val">1.0×</span>
+            </div>
+            <div class="setting-row">
+              <label for="setting-pitch">Pitch</label>
+              <input type="range" id="setting-pitch" min="0.5" max="2" step="0.1" value="1" />
+              <span id="setting-pitch-val">1.0</span>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-label">Interface</div>
+            <div class="setting-row">
+              <label for="setting-name">Your name</label>
+              <input type="text" id="setting-name" placeholder="e.g. Alex" />
+            </div>
+            <div class="setting-row">
+              <label for="setting-wake-word">Show wake word hint</label>
+              <label class="toggle">
+                <input type="checkbox" id="setting-wake-word" checked />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="settings-group">
+            <div class="settings-group-label">Backend</div>
+            <div class="setting-row">
+              <label for="setting-backend-url">Backend URL</label>
+              <input type="text" id="setting-backend-url" placeholder="http://localhost:8000" />
+            </div>
+            <div class="setting-row">
+              <div></div>
+              <button class="btn-primary" id="btn-test-backend">Test connection</button>
+            </div>
+            <div id="backend-test-result" class="backend-test-result"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toast-container" aria-live="assertive"></div>
+
+  <!-- Scripts (order matters) -->
+  <script src="orb.js"></script>
+  <script src="voice.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

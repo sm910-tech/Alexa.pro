@@ -1,0 +1,1 @@
+"""Isolated test suite for the standalone database package."""

@@ -1,0 +1,9 @@
+# alexa-pro backend dependencies
+# Install with: pip install -r requirements.txt
+
+fastapi>=0.111.0          # Web framework
+uvicorn[standard]>=0.29.0 # ASGI server (includes websockets + watchfiles for --reload)
+httpx>=0.27.0             # Async HTTP client (weather tool)
+anthropic>=0.25.0         # Anthropic Python SDK
+pydantic>=2.7.0           # Data validation (bundled with FastAPI, listed explicitly)
+python-dotenv>=1.0.0      # Load .env file
