@@ -183,7 +183,7 @@ class Assistant:
 
         # Inject conversation history (validated)
         for turn in history[-18:]:  # stay within context limits
-            role    = turn.get("role", "")
+           role = turn.role
             content = turn.get("content", "")
             if role in ("user", "assistant") and isinstance(content, str):
                 messages.append({"role": role, "content": content})
