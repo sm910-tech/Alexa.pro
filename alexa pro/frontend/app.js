@@ -13,19 +13,43 @@
 /* ─────────────────────────────────────────────────────────────────
    CONFIG
 ───────────────────────────────────────────────────────────────── */
+const DEFAULT_BACKEND_URL = 'https://alexa-pro.onrender.com';
+
 const Config = {
   get backendUrl() {
-    return localStorage.getItem('backend_url') || 'http://localhost:8000';
+    const saved = (localStorage.getItem('backend_url') || '').trim();
+    // Ignore a stale localhost setting when this site is hosted online.
+    if (saved && !/^https?:\/\/localhost(?::\d+)?$/i.test(saved)) {
+      return saved.replace(/\/+$/, '');
+    }
+    return DEFAULT_BACKEND_URL;
   },
-  set backendUrl(v) { localStorage.setItem('backend_url', v); },
+  set backendUrl(value) {
+    const normalized = String(value || '').trim().replace(/\/+$/, '');
+    if (!normalized) {
+      localStorage.removeItem('backend_url');
+      return;
+    }
+    localStorage.setItem('backend_url', normalized);
+  },
 };
+
+function readStoredJson(key, fallback) {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch (error) {
+    console.warn(`Ignoring invalid localStorage data for "${key}".`, error);
+    return fallback;
+  }
+}
 
 /* ─────────────────────────────────────────────────────────────────
    STATE
 ───────────────────────────────────────────────────────────────── */
 const State = {
   conversationHistory: [],
-  reminders:           JSON.parse(localStorage.getItem('reminders') || '[]'),
+  reminders:           readStoredJson('reminders', []),
   timers:              [],
   userName:            localStorage.getItem('user_name') || '',
 };
@@ -204,16 +228,46 @@ async function handleUserMessage(text) {
 }
 
 async function sendToBackend(message) {
-  const res = await fetch(`${Config.backendUrl}/chat`, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({
-      message,
-      history: State.conversationHistory.slice(-20), // last 10 turns
-    }),
-  });
-  if (!res.ok) throw new Error(`Server error ${res.status}`);
-  return res.json();
+  const baseUrl = Config.backendUrl.replace(/\/+$/, '');
+  let res;
+
+  try {
+    res = await fetch(`${baseUrl}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        history: State.conversationHistory.slice(-20),
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+  } catch (error) {
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+      throw new Error('The backend took too long to respond. Try again in a moment.');
+    }
+    throw new Error(`Could not reach ${baseUrl}. Check the backend URL and connection.`);
+  }
+
+  const body = await res.text();
+  let data;
+  try {
+    data = body ? JSON.parse(body) : {};
+  } catch {
+    data = { detail: body };
+  }
+
+  if (!res.ok) {
+    const detail = typeof data.detail === 'string'
+      ? data.detail
+      : JSON.stringify(data.detail || data || `HTTP ${res.status}`);
+    throw new Error(`Backend error ${res.status}: ${detail}`);
+  }
+
+  if (!data || typeof data.reply !== 'string') {
+    throw new Error('Backend returned an invalid response: missing a text reply.');
+  }
+
+  return data;
 }
 
 function handleToolResults(results) {
@@ -313,15 +367,25 @@ async function refreshDashboard() {
 
 async function fetchWeather() {
   try {
-    const res  = await fetch(`${Config.backendUrl}/weather`);
+    const res = await fetch(`${Config.backendUrl}/weather`, {
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!res.ok) throw new Error(`Weather request failed (${res.status})`);
     const data = await res.json();
 
-    document.getElementById('weather-icon').textContent = data.icon  || '⛅';
-    document.getElementById('weather-temp').textContent = data.temp  || '--°';
-    document.getElementById('weather-desc').textContent = data.description || 'Weather unavailable';
-    document.getElementById('weather-meta').textContent = data.location || '';
-  } catch (_) {
-    document.getElementById('weather-desc').textContent = 'Backend offline — start the server';
+    const icon = document.getElementById('weather-icon');
+    const temp = document.getElementById('weather-temp');
+    const desc = document.getElementById('weather-desc');
+    const meta = document.getElementById('weather-meta');
+
+    if (icon) icon.textContent = data.icon || '⛅';
+    if (temp) temp.textContent = data.temp || '--°';
+    if (desc) desc.textContent = data.description || 'Weather unavailable';
+    if (meta) meta.textContent = data.location || '';
+  } catch (error) {
+    console.warn('Weather could not be loaded:', error);
+    const desc = document.getElementById('weather-desc');
+    if (desc) desc.textContent = 'Weather unavailable';
   }
 }
 
@@ -578,13 +642,16 @@ function initSettings() {
     result.textContent = 'Testing…';
     result.className   = 'backend-test-result';
     try {
-      const res  = await fetch(`${Config.backendUrl}/health`, { signal: AbortSignal.timeout(5000) });
+      const res = await fetch(`${Config.backendUrl}/health`, {
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       result.textContent = `✓ Connected — ${data.message || 'Backend OK'}`;
-      result.className   = 'backend-test-result ok';
+      result.className = 'backend-test-result ok';
     } catch (e) {
-      result.textContent = `✗ Connection failed — is the backend running on ${Config.backendUrl}?`;
-      result.className   = 'backend-test-result err';
+      result.textContent = `✗ Connection failed: ${e.message || 'check URL and backend status'}`;
+      result.className = 'backend-test-result err';
     }
   });
 }
@@ -598,14 +665,18 @@ async function checkBackendHealth() {
 
   const check = async () => {
     try {
-      const res = await fetch(`${Config.backendUrl}/health`, { signal: AbortSignal.timeout(4000) });
+      const res = await fetch(`${Config.backendUrl}/health`, {
+        signal: AbortSignal.timeout(8000),
+      });
       if (res.ok) {
-        dot.className  = 'status-dot connected';
-        text.textContent = 'Connected';
-      } else throw new Error();
+        if (dot) dot.className = 'status-dot connected';
+        if (text) text.textContent = 'Connected';
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
     } catch {
-      dot.className  = 'status-dot error';
-      text.textContent = 'Offline';
+      if (dot) dot.className = 'status-dot error';
+      if (text) text.textContent = 'Offline';
     }
   };
 
